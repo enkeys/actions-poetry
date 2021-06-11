@@ -1,17 +1,41 @@
-name: "Python Poetry Action"
-author: "@abatilo"
-description: "An action to run https://github.com/python-poetry/poetry"
+name: "Python Poetry Action with cache"
+author: "@enkeys"
+description: "An action to run https://github.com/python-poetry/poetry with cache"
 branding:
   icon: "truck"
   color: "gray-dark"
 inputs:
-  poetry-version:
-    description: "The version of poetry to install"
-    required: true
-    default: "1.1.6"
+  poetry-arg:
+    description: "The ARGs for poetry to install"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
-    - run: |
-        pip install poetry==${{ inputs.poetry-version }}
+
+    - name: Get full Python version
+      id: full-python-version
       shell: bash
+      run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+    - name: Bootstrap poetry
+      shell: bash
+      run: |
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py \
+          | python - -y ${{ poetry-arg }}
+
+    - name: Configure poetry
+      shell: bash
+      run: poetry config virtualenvs.in-project true
+
+    - name: Set up cache
+      uses: actions/cache@v2
+      id: cache
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Ensure cache is healthy
+      if: steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
