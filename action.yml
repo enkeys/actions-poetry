@@ -5,7 +5,7 @@ branding:
   icon: "truck"
   color: "gray-dark"
 inputs:
-  poetry-arg:
+  arg:
     description: "The ARGs for poetry to install"
     required: false
     default: ""
@@ -21,8 +21,8 @@ runs:
     - name: Bootstrap poetry
       shell: bash
       run: |
-        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py \
-          | python - -y ${{ poetry-arg }}
+        curl -sL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py \
+          | python - -y ${{ arg }}
 
     - name: Configure poetry
       shell: bash
